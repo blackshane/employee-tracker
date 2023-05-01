@@ -1,7 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2');
 const dotenv = require('dotenv');
-const config = dotenv.config();
+dotenv.config();
 const inquirer = require('inquirer');
 
     // Initiate express and establish PORT
@@ -20,8 +20,7 @@ const connection = mysql.createConnection(
     },
 );
 
-    // Include how to setup .env in README.
-
+    // Create Connection
 connection.connect(function(err) {
     if(err) throw err;
     console.log(`Connected at port ${PORT}`); 
@@ -248,7 +247,7 @@ const addEmployee = async () => {
         await connection.promise().query(sql, newEmployee);
     
         console.log("Employee has been added!");
-        await viewAllEmployees();
+        viewAllEmployees();
     } catch (err) {
         console.error(err);
     }
@@ -303,11 +302,12 @@ const addRole = async () => {
            await connection.promise().query(sql, createNewRole);
            console.log("New Role Created!");
            viewAllRoles();
+        
           
         } catch(err) {
             throw err;
         }
-        promptUser();
+    promptUser();    
 };              
 
     // Add a Department
@@ -327,9 +327,11 @@ const addRole = async () => {
         console.log(`New department ${answer.newDepartment} added successfully!`);
 
         viewAllDepartments();
+       
     } catch(err) {
         console.error(err);
     }
+    promptUser();
     };
     
     // Update Employee Role
@@ -383,8 +385,9 @@ const updateEmployeeRole = async () => {
     
         let sql3 = `UPDATE employee SET employee.role_id = ? WHERE employee.id = ?`;
         await connection.promise().query(sql3, [newTitleId, employeeId]);
-        
-        await promptUser();
+
+        viewAllEmployees();
+        promptUser();
         
     } catch (error) {
         throw error;
