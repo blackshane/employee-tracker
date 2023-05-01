@@ -4,13 +4,13 @@ const dotenv = require('dotenv');
 const config = dotenv.config();
 const inquirer = require('inquirer');
 
-// Initiate express and establish PORT
+    // Initiate express and establish PORT
 const PORT = process.env.PORT || 3001;
 const app = express();
 
 app.use(express.urlencoded({extended: false}));
 
-// Create connection
+    // Create connection
 const connection = mysql.createConnection(
     {
     host: 'localhost',
@@ -20,7 +20,7 @@ const connection = mysql.createConnection(
     },
 );
 
-// Include how to setup .env in README.
+    // Include how to setup .env in README.
 
 connection.connect(function(err) {
     if(err) throw err;
@@ -28,7 +28,7 @@ connection.connect(function(err) {
     promptUser();
 });
 
-// Prompt User for Choices
+    // Prompt User for Choices
 const promptUser = () => {
   inquirer.prompt([
       {
@@ -98,7 +98,7 @@ const promptUser = () => {
   });
 };
 
-// View All Employees
+    // View All Employees
 const viewAllEmployees = async () => {
     try {
     const sql = `SELECT employee.id,
@@ -118,7 +118,7 @@ const viewAllEmployees = async () => {
 }
 };
 
-// View All Roles
+    // View All Roles
 const viewAllRoles = async () => {
     try{
     const sql = `SELECT role.id, role.title, department.name AS department
@@ -134,7 +134,7 @@ const viewAllRoles = async () => {
     }
 };
 
-// View all Departments
+    // View all Departments
 const viewAllDepartments = async () => {
     try {
     const sql =  `SELECT department.id AS id, department.name AS department FROM department`; 
@@ -146,7 +146,7 @@ const viewAllDepartments = async () => {
     }
   };
   
- // View all Employees by Department
+    // View all Employees by Department
 const viewEmployeesByDepartment = async () => {
     try {
     const sql = `SELECT employee.first_name, 
@@ -163,92 +163,170 @@ const viewEmployeesByDepartment = async () => {
     }
 };
 
-// View all Departments by Budget
-const viewDepartmentBudget = () => {
+    // View all Departments by Budget
+const viewDepartmentBudget = async () => {
+    try {
     const sql =     `SELECT department_id AS id, 
                     department.name AS department,
                     SUM(salary) AS budget
                     FROM  role  
                     INNER JOIN department ON role.department_id = department.id GROUP BY  role.department_id`;
-    connection.query(sql, (err, res) => {
-      if (err) throw err;
+    const [rows, fields] = await connection.promise().query(sql); 
+    console.table(rows);
         promptUser();
-    });
+    } catch(err) {
+        console.error(err);
+    }
   };
 
     // Add a New Employee
-  const addEmployee = () => {
-    inquirer.prompt([
-      {
-        type: 'input',
-        name: 'firstName',
-        message: "What is the employee's first name?",
-        validate: addFirstName => {
-          if (addFirstName) {
-              return true;
-          } else {
-              console.log('Please enter a first name');
-              return false;
-          }
+const addEmployee = async () => {
+    try {
+        const answer = await inquirer.prompt([
+        {
+            type: 'input',
+            name: 'firstName',
+            message: "What is the employee's first name?",
+            validate: addFirstName => {
+            if (addFirstName) {
+                return true;
+            } else {
+                console.log('Please enter a first name');
+                return false;
+            }
+            }
+        },
+        {
+            type: 'input',
+            name: 'lastName',
+            message: "What is the employee's last name?",
+            validate: addLastName => {
+            if (addLastName) {
+                return true;
+            } else {
+                console.log('Please enter a last name');
+                return false;
+            }
+            }
         }
-      },
-      {
-        type: 'input',
-        name: 'lastName',
-        message: "What is the employee's last name?",
-        validate: addLastName => {
-          if (addLastName) {
-              return true;
-          } else {
-              console.log('Please enter a last name');
-              return false;
-          }
-        }
-      }
-    ])
-      .then(answer => {
-      const newEmployee = [answer.firstName, answer.lastName]
-      const roleSql = `SELECT role.id, role.title FROM role`;
-      connection.promise().query(roleSql, (err, data) => {
-        if (err) throw err; 
+        ]);
+    
+        const newEmployee = [answer.firstName, answer.lastName];
+    
+        const roleSql = `SELECT role.id, role.title FROM role`;
+        const [data,] = await connection.promise().query(roleSql);
         const roles = data.map(({ id, title }) => ({ name: title, value: id }));
-        inquirer.prompt([
-              {
-                type: 'list',
-                name: 'role',
-                message: "What is the employee's role?",
-                choices: roles
-              }
-            ])
-              .then(roleChoice => {
-                const role = roleChoice.role;
-                newEmployee.push(role);
-                const managerSql =  `SELECT * FROM employee`;
-                connection.promise().query(managerSql, (err, data) => {
-                  if (err) throw err;
-                  const managers = data.map(({ id, first_name, last_name }) => ({ name: first_name + " "+ last_name, value: id }));
-                  inquirer.prompt([
-                    {
-                      type: 'list',
-                      name: 'manager',
-                      message: "Who is the employee's manager?",
-                      choices: managers
-                    }
-                  ])
-                    .then(managerChoice => {
-                      const manager = managerChoice.manager;
-                      newEmployee.push(manager);
-                      const sql =   `INSERT INTO employee (first_name, last_name, role_id, manager_id)
-                                    VALUES (?, ?, ?, ?)`;
-                      connection.query(sql, newEmployee, (err) => {
-                      if (err) throw err;
-                      console.log("Employee has been added!")
-                      viewAllEmployees();
-                });
-              });
-            });
-          });
-       });
-    });
-  };
+    
+        const roleChoice = await inquirer.prompt([
+        {
+            type: 'list',
+            name: 'role',
+            message: "What is the employee's role?",
+            choices: roles
+        }
+        ]);
+        const role = roleChoice.role;
+        newEmployee.push(role);
+    
+        const managerSql =  `SELECT * FROM employee`;
+        const [managerData,] = await connection.promise().query(managerSql);
+        const managers = managerData.map(({ id, first_name, last_name }) => ({ name: first_name + " "+ last_name, value: id }));
+    
+        const managerChoice = await inquirer.prompt([
+        {
+            type: 'list',
+            name: 'manager',
+            message: "Who is the employee's manager?",
+            choices: managers
+        }
+        ]);
+        const manager = managerChoice.manager;
+        newEmployee.push(manager);
+    
+        const sql =   `INSERT INTO employee (first_name, last_name, role_id, manager_id)
+                    VALUES (?, ?, ?, ?)`;
+        await connection.promise().query(sql, newEmployee);
+    
+        console.log("Employee has been added!");
+        await viewAllEmployees();
+    } catch (err) {
+        console.error(err);
+    }
+    };
+    // Add a New Role
+const addRole = async () => {
+    try {
+    const sql = 'SELECT * FROM department'
+    const [departments] = await connection.promise().query(sql); 
+    const deptNamesArray = departments.map((department) => department.name);
+    deptNamesArray.push('Create Department');
+       
+    const {departmentName} = await inquirer.prompt([
+        {
+            name: 'departmentName',
+            type: 'list',
+            message: 'Which department is this new role in?',
+            choices: deptNamesArray
+        }
+        ]);
+        
+        if (answer.departmentName === 'Create Department') {
+            await addDepartment();
+        } else {
+            await addRoleResume(departmentName, departments);
+        } 
+            
+    } catch(err) {
+        throw(err);
+    }
+        };
   
+        const addRoleResume = async (departmentName, departments) => {
+            try {
+                const {newRole, salary} = await inquirer.prompt([
+              {
+                name: 'newRole',
+                type: 'input',
+                message: 'What is the name of your new role?',
+                validate: validate.validateString
+              },
+              {
+                name: 'salary',
+                type: 'input',
+                message: 'What is the salary of this new role?',
+                validate: validate.validateSalary
+              }
+            ]);
+           const {id: departmentId} = departments.find((department) => department.name === departmentName);
+           const sql = `INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)`;
+           const createNewRole = [newRole, salary, departmentId];
+
+           await connection.promise().query(sql, createNewRole);
+           await viewAllNewRoles();
+        } catch(err) {
+            throw err;
+        }
+};              
+
+    // Add a Department
+ const addDepartment = async () => {
+    try {
+        const answer = await inquirer.prompt([
+            {
+                name: 'newDepartment',
+                type: 'input',
+                message: 'What is the name of your new Department?',
+                validate: validate.validateString
+            }
+        ]);
+
+        const deptSql = `INSERT INTO department (name) VALUES (?)`;
+        await connection.promise().query(deptSql, [answer.newDepartment]);
+        console.log(`New department ${answer.newDepartment} added successfully!`);
+
+        viewAllDepartments();
+    } catch(err) {
+        console.error(err);
+    }
+    };
+ 
