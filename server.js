@@ -36,16 +36,16 @@ const promptUser = () => {
         type: 'list',
         message: 'Please select an option:',
         choices: [
-          'View All Employees',
-          'View All Roles',
-          'View All Departments',
+        
+          'View All Departments', 
+          'View All Roles',   
+          'View All Employees',   
+          'Add Department',
+          'Add Role',
+          'Add Employee',
+          'Update Employee Role',       
           'View All Employees By Department',
           'View Department Budgets',
-          'Update Employee Role',
-          'Update Employee Manager',
-          'Add Employee',
-          'Add Role',
-          'Add Department',
           'Exit'
           ]
       }
@@ -253,6 +253,7 @@ const addEmployee = async () => {
         console.error(err);
     }
     };
+
     // Add a New Role
 const addRole = async () => {
     try {
@@ -270,7 +271,7 @@ const addRole = async () => {
         }
         ]);
         
-        if (answer.departmentName === 'Create Department') {
+        if (departmentName === 'Create Department') {
             await addDepartment();
         } else {
             await addRoleResume(departmentName, departments);
@@ -288,13 +289,11 @@ const addRole = async () => {
                 name: 'newRole',
                 type: 'input',
                 message: 'What is the name of your new role?',
-                validate: validate.validateString
               },
               {
                 name: 'salary',
                 type: 'input',
-                message: 'What is the salary of this new role?',
-                validate: validate.validateSalary
+                message: 'What is the salary of this new role?',             
               }
             ]);
            const {id: departmentId} = departments.find((department) => department.name === departmentName);
@@ -302,10 +301,13 @@ const addRole = async () => {
            const createNewRole = [newRole, salary, departmentId];
 
            await connection.promise().query(sql, createNewRole);
-           await viewAllNewRoles();
+           console.log("New Role Created!");
+           viewAllRoles();
+          
         } catch(err) {
             throw err;
         }
+        promptUser();
 };              
 
     // Add a Department
@@ -316,7 +318,7 @@ const addRole = async () => {
                 name: 'newDepartment',
                 type: 'input',
                 message: 'What is the name of your new Department?',
-                validate: validate.validateString
+              
             }
         ]);
 
@@ -329,4 +331,63 @@ const addRole = async () => {
         console.error(err);
     }
     };
- 
+    
+    // Update Employee Role
+const updateEmployeeRole = async () => {
+    try {
+        let sql = `SELECT employee.id, employee.first_name, employee.last_name, role.id AS "role_id"
+                FROM employee, role, department WHERE department.id = role.department_id AND role.id = employee.role_id`;
+        const [employeeResponse] = await connection.promise().query(sql);
+    
+        let employeeNamesArray = [];
+        employeeResponse.forEach((employee) => {
+        employeeNamesArray.push(`${employee.first_name} ${employee.last_name}`);
+        });
+    
+        let sql2 = `SELECT role.id, role.title FROM role`;
+        const [roleResponse] = await connection.promise().query(sql2);
+    
+        let rolesArray = [];
+        roleResponse.forEach((role) => {
+        rolesArray.push(role.title);
+        });
+    
+        const { chosenEmployee, chosenRole } = await inquirer.prompt([
+        {
+            name: 'chosenEmployee',
+            type: 'list',
+            message: 'Which employee has a new role?',
+            choices: employeeNamesArray,
+        },
+        {
+            name: 'chosenRole',
+            type: 'list',
+            message: 'What is their new role?',
+            choices: rolesArray,
+        },
+        ]);
+    
+        let newTitleId, employeeId;
+    
+        roleResponse.forEach((role) => {
+        if (chosenRole === role.title) {
+            newTitleId = role.id;
+        }
+        });
+    
+        employeeResponse.forEach((employee) => {
+        if (chosenEmployee === `${employee.first_name} ${employee.last_name}`) {
+            employeeId = employee.id;
+        }
+        });
+    
+        let sql3 = `UPDATE employee SET employee.role_id = ? WHERE employee.id = ?`;
+        await connection.promise().query(sql3, [newTitleId, employeeId]);
+        
+        await promptUser();
+        
+    } catch (error) {
+        throw error;
+    }
+    };
+    
