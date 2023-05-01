@@ -271,7 +271,7 @@ const addRole = async () => {
         ]);
         
         if (departmentName === 'Create Department') {
-            await addDepartment();
+            addDepartment();
         } else {
             await addRoleResume(departmentName, departments);
         } 
@@ -306,8 +306,7 @@ const addRole = async () => {
           
         } catch(err) {
             throw err;
-        }
-    promptUser();    
+        }    
 };              
 
     // Add a Department
