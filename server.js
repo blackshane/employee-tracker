@@ -11,7 +11,7 @@ const app = express();
 app.use(express.urlencoded({extended: false}));
 
 // Create connection
-const db = mysql.createConnection(
+const connection = mysql.createConnection(
     {
     host: 'localhost',
     user: process.env.DB_USER,
@@ -22,7 +22,7 @@ const db = mysql.createConnection(
 
 // Include how to setup .env in README.
 
-db.connect(function(error) {
+connection.connect(function(error) {
     if(error) throw error;
     console.log(`Connected at port ${PORT}`); 
 });
@@ -83,7 +83,7 @@ const promptUser = () => {
             updateEmployeeManager();
         }
 
-        if (choices === 'View All Roles') {
+        if (choices === 'View All Roles') { //
             viewAllRoles();
         }
 
@@ -111,4 +111,33 @@ const promptUser = () => {
             connection.end();
         }
   });
+};
+
+// View All Employees
+const viewAllEmployees = () => {
+    const sql = `SELECT employee.id,
+    employee.first_name,
+    employee.last_name,
+    role.title, 
+    department.name AS 'department',
+    role.salary
+    FROM employee, role,department
+    WHERE department.id = role.department_id
+    AND role.id = employee.role_id`;
+connection.promise().query(sql, (err, res) => {
+    if (err) throw err;
+    promptUser();
+});
+};
+
+// View All Roles
+const viewAllRoles = () => {
+    const sql = `SELECT role.id, role.title, department.name AS department
+    FROM role
+    JOIN  department ON role.department_id = department.id`;
+connection.promise().query(sql, (err, res) => {
+    if (err) throw err;
+    res.forEach((role) => {console.log(role.title);});
+    promptUser();
+});
 };
