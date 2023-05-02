@@ -221,7 +221,8 @@ const addEmployee = async () => {
             type: 'list',
             name: 'role',
             message: "What is the employee's role?",
-            choices: roles
+            choices: roles,
+            default: roles[0].value
         }
         ]);
         const role = roleChoice.role;
@@ -271,7 +272,7 @@ const addRole = async () => {
         ]);
         
         if (departmentName === 'Create Department') {
-            addDepartment();
+            await addDepartment();
         } else {
             await addRoleResume(departmentName, departments);
         } 

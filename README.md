@@ -10,6 +10,7 @@
   - [Usage Information](#usage-information)
   - [License](#license)
   - [Questions](#questions)
+  - [Walkthrough video](#walkthrough-video)
 
 ## Instillation Instructions
 * This application requires express, mysql2, dotenv, and inquirer as dependencies.
@@ -27,4 +28,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 You can find my GitHub at (https://github.com/blackshane).
 My email address is tshaneblack2014@gmail.com. You can reach me there with additional questions. 
  
-
+## Walkthrough video
+A walkthrough video can be found here. 
+https://user-images.githubusercontent.com/122633142/235561763-b67f552b-1562-420e-a556-98cf4701d232.mp4
